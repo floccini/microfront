@@ -1,50 +1,146 @@
-# React + TypeScript + Vite
+# Microfront Web Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project demonstrates a microfrontend architecture using React and Vite, allowing components to be dynamically rendered and shared across multiple frontend applications.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This microfrontend is set up using [Vite](https://vitejs.dev/) with the [@originjs/vite-plugin-federation](https://github.com/originjs/vite-plugin-federation) plugin to enable module federation. Components within the `src/components` directory can be exposed and consumed in a main frontend application.
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+### Prerequisites
 
-- Configure the top-level `parserOptions` property like this:
+Ensure you have the following installed:
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
+- [Node.js](https://nodejs.org/) (version 16+ recommended)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+
+### Installation
+
+1. **Clone the repository**:
+
+   ```bash
+   git clone <repository-url>
+   cd <repository-directory>
+   ```
+
+2. **Install dependencies**:
+
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**:
+
+   ```bash
+   npm run dev
+   ```
+
+   This will start the server and make the microfrontend available for integration.
+
+## Project Structure
+
+The project follows a simple structure:
+
+- **`src/components`**: Directory where your React components live.
+
+## Adding New Components
+
+To add a new component to this microfrontend:
+
+1. **Create the component**:
+
+   Inside the `src/components` directory, create your component file, e.g., `NewComponent.tsx`:
+
+   ```jsx
+   // src/components/NewComponent.tsx
+   import React from 'react';
+
+   const NewComponent = () => {
+     return <div>This is a new component!</div>;
+   };
+
+   export default NewComponent;
+   ```
+
+2. **Expose the component**:
+
+   In `vite.config.js`, add your new component to the `exposes` section:
+
+   ```javascript
+   import { defineConfig } from 'vite';
+   import react from '@vitejs/plugin-react';
+   import federation from '@originjs/vite-plugin-federation';
+
+   export default defineConfig({
+     plugins: [
+       react(),
+       federation({
+         name: 'microfront',
+         filename: 'remoteEntry.js',
+         exposes: {
+           './List': './src/components/List.tsx',
+           './Input': './src/components/Input.tsx',
+           './ProfileImage': './src/components/ProfileImage.tsx',
+           './NewComponent': './src/components/NewComponent.tsx',
+         },
+         shared: ['react'],
+       }),
+     ],
+     build: {
+       modulePreload: false,
+       target: 'esnext',
+       minify: false,
+       cssCodeSplit: false,
+     },
+   });
+   ```
+
+3. **Use the component in the main frontend project**:
+
+   In your main frontend project, import and use the component like this:
+
+   ```javascript
+   import NewComponent from 'microfront/NewComponent';
+
+   const App = () => (
+     <div>
+       <NewComponent />
+     </div>
+   );
+
+   export default App;
+   ```
+
+
+## Configuration Details
+
+The `vite.config.js` is configured to expose components and enable module federation:
+
+```javascript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import federation from '@originjs/vite-plugin-federation';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    federation({
+      name: 'microfront', // Here is the name of your microfrontend
+      filename: 'remoteEntry.js', // Here is the name of the file that will be used to import on your main front-end that will contain all your components code
+      exposes: {
+        './List': './src/components/List.tsx',
+        './Input': './src/components/Input.tsx',
+        './ProfileImage': './src/components/ProfileImage.tsx',
+      },
+      shared: ['react'],
+    }),
+  ],
+  build: {
+    modulePreload: false,
+    target: 'esnext',
+    minify: false,
+    cssCodeSplit: false,
   },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+});
 ```
